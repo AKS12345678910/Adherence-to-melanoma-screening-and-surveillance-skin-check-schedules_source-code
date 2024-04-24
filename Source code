@@ -1,0 +1,74 @@
+/*******************************************************************************************************
+Perform simple data manipulations 
+XLSX:"./Risk tool complete.xlsx" 						-> SAS:raw.tsp_Substudy
+XLSX: "./Clinician identified deviations sample.xlsx" 	-> SAS:raw.tsp_Substudy_Clinician
+*******************************************************************************************************/
+*libraries;
+libname vad "../data/vad";
+libname raw "../data/raw";
+%inc "./m_tiles.sas";
+options fmtsearch=(work,vad.formats);
+/*******************************************************************************************************/
+*get data;
+
+/************************************************************************************
+Risk tool Data
+XLSX:"./Risk tool complete.xlsx" 						-> SAS:raw.tsp_Substudy
+************************************************************************************/
+
+data tsp_substudy; set raw.tsp_substudy; 	proc sort; by ID; run;
+
+data tsp_substudy;
+	set tsp_substudy;
+	by ID;
+	Risk_prediction_10y=Risk_prediction__10y_*1;
+run;
+
+
+%median(tsp_substudy,Age,6.0);
+%median(tsp_substudy,Risk_prediction_10y,6.2);
+
+data tsp_substudy;
+	set tsp_substudy;
+	Schedule_fidelity=lowcase(Change_in_frequency);
+	if index(lowcase(Change_in_frequency),"decrease")>0 | index(lowcase(Change_in_frequency),"increase")>0
+		then Schedule_fidelity="change";
+	if index(lowcase(Change_in_frequency),"decrease")>0 then Schedule_change="decreased";
+	if index(lowcase(Change_in_frequency),"increase")>0 then Schedule_change="increased";
+run;
+
+
+data vad.tsp_substudy; set tsp_substudy; run;
+/************************************************************************************
+Clinician Data
+XLSX: "./Clinician identified deviations sample.xlsx" 	-> SAS:raw.tsp_Substudy_Clinician
+************************************************************************************/
+data tsp_substudy_Clinician; set raw.tsp_substudy_Clinician; 	proc sort; by ID; run;
+
+data tsp_substudy_Clinician;
+	set tsp_substudy_Clinician;
+	by ID;
+	Risk_prediction_10y=Risk_Prediction_10_year_risk_;
+run;
+
+
+%median(tsp_substudy_Clinician,Age,6.0);
+%median(tsp_substudy_Clinician,Risk_prediction_10y,6.2);
+
+data tsp_substudy_Clinician;
+	set tsp_substudy_Clinician;
+	Next_skin_check_appointment = Next_appointment_booking;
+
+	Schedule_fidelity=lowcase(Change_in_frequency);
+	if index(lowcase(Change_in_frequency),"decrease")>0 | index(lowcase(Change_in_frequency),"increase")>0
+		then Schedule_fidelity="change";
+	if index(lowcase(Change_in_frequency),"decrease")>0 then Schedule_change="decreased";
+	if index(lowcase(Change_in_frequency),"increase")>0 then Schedule_change="increased";
+run;
+
+
+data vad.tsp_substudy_Clinician; set tsp_substudy_Clinician; run;
+
+/************************************************************************************
+END OF PROGRAM
+************************************************************************************/
